@@ -1,0 +1,42 @@
+REGISTRO DE GASTOS
+
+-Sistema que de forma simple por medio de un boton y algunos input registra cada gasto que se realiza
+-La interfaz tiene:
+
+	- un botón de inicio
+	- un botón para ver las estadísticas de los gastos
+	
+	EN EL INICIO TEDRÍA 
+
+		- un input para seleccionar un gasto creado o crear uno nuevo
+		- un input para llenar el monto del gasto
+		- botón de guardar
+			- los datos se guardan en una base de datos:
+				-registro-gastos
+	
+	EN LAS ESTADISTICAS
+		- un input para filtrar por:
+			-fecha del gasto
+			-descripcion del gasto
+
+		- una tabla que contiene 3 columnas:
+			-fecha del gasto
+			-descripcion del gasto
+			-monto gastado
+
+		- debe desplegarse el monto total de lo filtrado
+
+LARAVEL:
+
+- SE CREA NUEVO PROYECTO:
+	laravel new [nombre del proyecto]
+- SE PUEDE DESPLEGAR USANDO XAMP O:
+	 php artisan serve
+- SE CREA LA BASE DE DATOS Y SE MODIFICA EL NOMBRE DE LA BD EN EL ARCHIVO:
+	env
+- EN database/migratios SE PUEDEN VERIFICAR LAS MIGRACIONES Y SE MIGRAN:
+	php artisan migrate (se ejecuta cada vez que se cree un modelo)
+- SE CREA EL MODELO DE LA BASE DE DATOS QUE USAREMOS:
+	php artisan make:model [NOMBRE DEL MODELO] -mcr(modelo, control, recursos)
+		
+
