@@ -13,12 +13,14 @@ use App\Http\Controllers\GastosController;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
+Route::redirect('/', '/gastos');
 
 // Route::get('/', function () {
-//     return view('welcome');
+//     return view('gastos');
 // });
 // Route::get('/gastos', function () {
 //     return view('gastos.index');
 // });
 
 Route::resource('gastos', GastosController::class);
+Route::get('autocomplete', [GastosController::class, 'autocomplete'])->name('autocomplete');

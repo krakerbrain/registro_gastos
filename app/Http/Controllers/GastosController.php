@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Gastos;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class GastosController extends Controller
 {
@@ -13,7 +15,14 @@ class GastosController extends Controller
     public function index()
     {
         //
-        return view('gastos.index');
+        $populares = Gastos::select('descripcion', DB::raw('COUNT(*) as total'))
+        ->groupBy('descripcion')
+        ->orderByDesc('total')
+        ->limit(6)
+        ->get();
+
+        return view('gastos.index', compact('populares'));
+        // return view('gastos.index');
     }
 
     /**
@@ -30,7 +39,6 @@ class GastosController extends Controller
      */
     public function store(Request $request)
     {
-        //
         // $datosGastos = request()->all();
         $datosGastos = request()->except('_token');
         Gastos::create($datosGastos);
@@ -83,4 +91,32 @@ class GastosController extends Controller
         return redirect('gastos/estadisticas');
 
     }
+
+
+    public function autocomplete(Request $request)
+    {
+      
+        $query = $request->get('term', '');
+       
+        $validator = Validator::make(['query' => $query], [
+            'query' => 'required|alpha_num',
+        ]);
+        
+        if ($validator->fails()) {
+            return response()->json(['error' => 'Invalid input']);
+        }
+    
+        $gastos = Gastos::where('descripcion', 'LIKE', '%'.$query.'%')->get();
+    
+        $data = [];
+        foreach ($gastos as $gasto) {
+            $data[] = [
+                'value' => $gasto->descripcion,
+                'id' => $gasto->id,
+            ];
+        }
+    
+        return response()->json($data);
+    }
+
 }

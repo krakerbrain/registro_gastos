@@ -1,7 +1,7 @@
 <!-- resources/views/welcome.blade.php -->
 @vite(['resources/scss/app.scss', 'resources/js/app.js'])
 
-<ul class="nav nav-pills nav-justified">
+<ul class="nav nav-pills nav-justified mb-3">
   <li class="nav-item">
     <a class="nav-link {{$index == 'gastos/estadisticas' ? '' : 'active'}}" aria-current="page" href="{{url('gastos/')}}">Inicio</a>
   </li>
