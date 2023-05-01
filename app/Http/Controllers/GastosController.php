@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Gastos;
+use App\Models\TipoGasto;
+use App\Models\DescripcionGasto;
+use App\Models\RelacionGasto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -14,15 +17,14 @@ class GastosController extends Controller
      */
     public function index()
     {
-        //
-        $populares = Gastos::select('descripcion', DB::raw('COUNT(*) as total'))
-        ->groupBy('descripcion')
-        ->orderByDesc('total')
-        ->limit(6)
-        ->get();
-
+        $populares = TipoGasto::select('tipo_gastos.id', 'tipo_gastos.descripcion', DB::raw('COUNT(*) as total'))
+            ->join('gastos', 'tipo_gastos.id', '=', 'gastos.tipo_gasto_id')
+            ->groupBy('tipo_gastos.id', 'tipo_gastos.descripcion')
+            ->orderByDesc('total')
+            ->limit(6)
+            ->get();
+    
         return view('gastos.index', compact('populares'));
-        // return view('gastos.index');
     }
 
     /**
@@ -39,19 +41,53 @@ class GastosController extends Controller
      */
     public function store(Request $request)
     {
-        // $datosGastos = request()->all();
-        $datosGastos = request()->except('_token');
-        Gastos::create($datosGastos);
-        return redirect('gastos/estadisticas');
-    }
+        $request->validate([
+            'tipoGasto' => 'required|string',
+            'descripcion' => 'required|string',
+            'monto_gasto' => 'required|numeric',
+        ]);
+    
+        // Buscar o crear el tipo de gasto
+        $tipoGasto = TipoGasto::firstOrCreate(['descripcion' => $request->input('tipoGasto')]);
+    
+        // Insertar el gasto
+        $gasto = new Gastos;
+        $gasto->tipo_gasto_id = $tipoGasto->id;
+        $gasto->monto_gasto = $request->input('monto_gasto');
+        $gasto->save();
+    
+        // Insertar las descripciones
+        $frases = explode(',', $request->input('descripcion'));
+        foreach ($frases as $frase) {
+            $descripcion = DescripcionGasto::where('descripcion', trim($frase))->first();
+            if (!$descripcion) {
+                $descripcion = new DescripcionGasto;
+                $descripcion->descripcion = trim($frase);
+                $descripcion->tipo_gasto_id = $tipoGasto->id;
+                $descripcion->save();
+            }
 
-    /**
+            // Crear la relación entre gasto y descripción
+            $gastoDescripcion = new RelacionGasto;
+            $gastoDescripcion->gasto_id = $gasto->id;
+            $gastoDescripcion->descripcion_gasto_id = $descripcion->id;
+            $gastoDescripcion->save();
+        }
+    
+        // Actualizar las descripciones con el ID del tipo de gasto
+        DescripcionGasto::where('tipo_gasto_id', '=', 0)
+            ->update(['tipo_gasto_id' => $tipoGasto->id]);
+    
+        return redirect()->route('gastos.index');
+    }
+    
+      /**
      * Display the specified resource.
      */
     public function show(Gastos $gastos)
     {
         //
-        $gastos = Gastos::all();
+        $gastos = Gastos::with('tipoGasto')->get();
         $suma = Gastos::sum('monto_gasto');
         return view('gastos.estadisticas', [
                                             'gastos' => $gastos,
@@ -64,8 +100,15 @@ class GastosController extends Controller
      */
     public function edit($id)
     {
-        //
-        $gastos = Gastos::findOrFail($id);
+        $gastos = Gastos::select('gastos.id', 'gastos.monto_gasto', 'tipo_gastos.id as tipo_gasto_id','tipo_gastos.descripcion as tipo_gasto', DB::raw('GROUP_CONCAT(descripcion_gastos.descripcion SEPARATOR ", ") as descripcion_gasto'))
+        ->join('tipo_gastos', 'gastos.tipo_gasto_id', '=', 'tipo_gastos.id')
+        ->join('descripcion_gasto_gasto', 'descripcion_gasto_gasto.gasto_id', '=', 'gastos.id')
+        ->join('descripcion_gastos', 'descripcion_gastos.id', '=', 'descripcion_gasto_gasto.descripcion_gasto_id')
+        ->where('gastos.id', '=', $id)
+        ->groupBy('gastos.id', 'gastos.monto_gasto','tipo_gastos.id','tipo_gastos.descripcion')
+        ->firstOrFail();
+
+
         return view('gastos.edit', compact('gastos'));
     }
 
@@ -74,12 +117,40 @@ class GastosController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
         $datosGastos = request()->except(['_token', '_method']);
-        Gastos::where('id','=',$id)->update($datosGastos);
+    
+        // Actualizar la tabla "Gastos"
+        Gastos::where('id','=',$id)->update([
+            'monto_gasto' => $datosGastos['monto_gasto']
+        ]);
+    
+        // Obtener las palabras de la descripción de gasto
+        $palabras = explode(',', $datosGastos['descripcion']);
+    
+        // Eliminar todos los registros correspondientes al gasto_id en la tabla "RelacionGasto"
+        RelacionGasto::where('gasto_id', '=', $id)->delete();
+    
+        // Actualizar la tabla "RelacionGasto" para cada palabra de la descripción
+        foreach ($palabras as $palabra) {
+            $palabra = trim($palabra);
+    
+            // Obtener el id de la descripción de gasto correspondiente
+            $descripcion = DescripcionGasto::where('descripcion', '=', $palabra)->first();
+            $descripcionId = $descripcion->id;
+    
+            // Actualizar la tabla "RelacionGasto"
+            RelacionGasto::create([
+                'gasto_id' => $id,
+                'descripcion_gasto_id' => $descripcionId
+            ]);
+        }
+    
+        // Redireccionar a la página de estadísticas de gastos
         return redirect('gastos/estadisticas');
-       
     }
+    
+    
+    
 
     /**
      * Remove the specified resource from storage.
@@ -95,28 +166,52 @@ class GastosController extends Controller
 
     public function autocomplete(Request $request)
     {
-      
         $query = $request->get('term', '');
        
         $validator = Validator::make(['query' => $query], [
-            'query' => 'required|alpha_num',
+            'query' => 'required|regex:/^[a-zA-Z0-9\s]+$/',
         ]);
         
         if ($validator->fails()) {
             return response()->json(['error' => 'Invalid input']);
         }
     
-        $gastos = Gastos::where('descripcion', 'LIKE', '%'.$query.'%')->get();
+        $tipogastos = TipoGasto::where('descripcion', 'LIKE', '%'.$query.'%')->get();
     
         $data = [];
-        foreach ($gastos as $gasto) {
+        foreach ($tipogastos as $tipogasto) {
             $data[] = [
-                'value' => $gasto->descripcion,
-                'id' => $gasto->id,
+                'value' => $tipogasto->descripcion,
+                'id' => $tipogasto->id,
             ];
         }
     
         return response()->json($data);
     }
 
+
+    public function getDescripciones($tipo_gasto_id)
+    {
+        
+        $descripciones = DescripcionGasto::join('tipo_gastos', 'tipo_gastos.id', '=', 'descripcion_gastos.tipo_gasto_id')
+                        ->select('descripcion_gastos.descripcion')
+                        ->where('tipo_gastos.id', $tipo_gasto_id)
+                        ->pluck('descripcion_gastos.descripcion')
+                        ->toArray();
+
+        return response()->json([$descripciones]);
+    }
+
+    public function getDescripcionesEstadisticas($gasto_id)
+    {
+        
+        $descripciones = RelacionGasto::join('descripcion_gastos', 'descripcion_gastos.id', '=', 'descripcion_gasto_gasto.descripcion_gasto_id')
+        ->where('descripcion_gasto_gasto.gasto_id', $gasto_id)
+        ->select('descripcion_gastos.descripcion')
+        ->pluck('descripcion_gastos.descripcion')
+        ->toArray();
+
+        return response()->json([$descripciones]);
+    }
+    
 }

@@ -13,9 +13,12 @@ return new class extends Migration
     {
         Schema::create('gastos', function (Blueprint $table) {
             $table->id();
-            $table->string('descripcion');
             $table->integer('monto_gasto');
+            $table->unsignedBigInteger('tipo_gasto_id');
             $table->timestamps();
+            
+            $table->foreign('tipo_gasto_id')->references('id')->on('tipo_gastos');
+
         });
     }
 
@@ -26,4 +29,6 @@ return new class extends Migration
     {
         Schema::dropIfExists('gastos');
     }
+
+
 };
