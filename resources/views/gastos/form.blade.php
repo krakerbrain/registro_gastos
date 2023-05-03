@@ -1,7 +1,7 @@
 
 @if (isset($populares))
 <fieldset style="all:revert;" class="mb-3">
-    <legend style="all:revert">Gastos más frecuentexes</legend>
+    <legend style="all:revert">Gastos más frecuentes</legend>
 <div class="d-flex flex-wrap">
         @foreach($populares as $tipoGasto)
         <div class="col-md col-6">

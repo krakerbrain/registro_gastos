@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GastosController;
+use App\Http\Controllers\RegistroUsuario;
+use App\Http\Controllers\LoginController;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,7 +15,7 @@ use App\Http\Controllers\GastosController;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-Route::redirect('/', '/gastos');
+Route::redirect('/', '/login');
 
 // Route::get('/', function () {
 //     return view('gastos');
@@ -28,6 +30,10 @@ Route::get('get_descripciones/{tipo_gasto_id}', [GastosController::class, 'getDe
 Route::get('get_descripciones_estadisticas/{gasto_id}', [GastosController::class, 'getDescripcionesEstadisticas'])->name('get_descripciones_estadisticas');
 
 
+Route::get('/register', [RegistroUsuario::class, 'show']);
+Route::post('/register', [RegistroUsuario::class, 'register']);
 
+Route::get('/login', [LoginController::class, 'show']);
+Route::post('/login', [LoginController::class, 'login']);
 
 
