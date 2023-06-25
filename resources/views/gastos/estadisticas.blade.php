@@ -1,9 +1,13 @@
+@php
+    use Magarrent\LaravelCurrencyFormatter\Facades\Currency;
+@endphp
 @include('partials.header')
+@auth
                 <div class="d-flex justify-content-between">
                     <h4>Total de gastos </h4>
                     <h4>$ {{$suma}}</h4>
                 </div>
-                <table class="table table-striped table-bordered small">
+                <table class="table table-striped table-bordered">
                     <thead>
                         <tr>
                             <th class="text-center">Gasto</th>
@@ -18,7 +22,7 @@
                                 <td class="align-baseline">{{ $gasto->tipoGasto->descripcion }}
                                     <a href="#" id="despliegaDesc" onclick="despliegaDesc('gasto-{{ $gasto->id }}')" title="Descripcion"><i id="icono-ver-gasto-{{ $gasto->id }}" class="fa-solid fa-eye"></i></a>
                                 </td>
-                                <td class="align-baseline text-center">$ {{ $gasto->monto_gasto }}</td>
+                                <td class="align-baseline text-end" nowrap>{{Currency::currency("CLP")->format($gasto->monto_gasto,true)}}</td>
                                 <td class="align-baseline text-center">{{ date_format($gasto->created_at, "d/m/Y") }}</td>
                                 <td class="d-flex align-items-center justify-content-around">
                                     <a href="{{url('/gastos/'.$gasto->id.'/edit')}}" title="Editar"><i class="fa-solid fa-pen-to-square"></i></a>
@@ -85,5 +89,6 @@
             }
         }
     </script>
+    @endauth
 </body>
 </html>

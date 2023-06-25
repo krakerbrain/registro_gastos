@@ -6,19 +6,22 @@ use App\Models\Gastos;
 use App\Models\TipoGasto;
 use App\Models\DescripcionGasto;
 use App\Models\RelacionGasto;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 
 class GastosController extends Controller
 {
-    /**
+
+  /**
      * Display a listing of the resource.
      */
     public function index()
     {
         $populares = TipoGasto::select('tipo_gastos.id', 'tipo_gastos.descripcion', DB::raw('COUNT(*) as total'))
             ->join('gastos', 'tipo_gastos.id', '=', 'gastos.tipo_gasto_id')
+            ->where('gastos.idusuario', '=', Auth::id()) // Agregar cláusula where
             ->groupBy('tipo_gastos.id', 'tipo_gastos.descripcion')
             ->orderByDesc('total')
             ->limit(6)
@@ -46,24 +49,44 @@ class GastosController extends Controller
             'descripcion' => 'required|string',
             'monto_gasto' => 'required|numeric',
         ]);
-    
+        
         // Buscar o crear el tipo de gasto
-        $tipoGasto = TipoGasto::firstOrCreate(['descripcion' => $request->input('tipoGasto')]);
+        // $tipoGasto = TipoGasto::firstOrCreate(['descripcion' => $request->input('tipoGasto')]);
+        $tipoGastoExistente = TipoGasto::where('descripcion', $request->input('tipoGasto'))
+                                ->where('idusuario', Auth::id())
+                                ->first();
+
+        if (!$tipoGastoExistente) {
+            $tipoGasto = new TipoGasto;
+            $tipoGasto->idusuario = Auth::id();
+            $tipoGasto->descripcion = $request->input('tipoGasto');
+            $tipoGasto->save();
+        } else {
+            $tipoGasto = $tipoGastoExistente;
+        }
+        
+
     
         // Insertar el gasto
         $gasto = new Gastos;
         $gasto->tipo_gasto_id = $tipoGasto->id;
         $gasto->monto_gasto = $request->input('monto_gasto');
+        $gasto->idusuario = Auth::id(); // Agregar el ID del usuario
         $gasto->save();
     
         // Insertar las descripciones
         $frases = explode(',', $request->input('descripcion'));
+        // Filtrar los elementos vacíos o que no contienen letras
+        $frases = preg_grep('/\S/', $frases);
         foreach ($frases as $frase) {
-            $descripcion = DescripcionGasto::where('descripcion', trim($frase))->first();
+            $descripcion = DescripcionGasto::where('descripcion', trim($frase))
+                        ->where('idusuario', Auth::id())
+                        ->first();
             if (!$descripcion) {
                 $descripcion = new DescripcionGasto;
                 $descripcion->descripcion = trim($frase);
                 $descripcion->tipo_gasto_id = $tipoGasto->id;
+                $descripcion->idusuario = Auth::id(); // Agregar el ID del usuario
                 $descripcion->save();
             }
 
@@ -87,8 +110,12 @@ class GastosController extends Controller
     public function show(Gastos $gastos)
     {
         //
-        $gastos = Gastos::with('tipoGasto')->get();
-        $suma = Gastos::sum('monto_gasto');
+        $idusuario = Auth::id();
+        $gastos = Gastos::with('tipoGasto')
+               ->where('idusuario', $idusuario)
+               ->get();
+        $suma = Gastos::where('idusuario', $idusuario)
+               ->sum('monto_gasto');
         return view('gastos.estadisticas', [
                                             'gastos' => $gastos,
                                              'suma' => $suma
@@ -105,6 +132,7 @@ class GastosController extends Controller
         ->join('descripcion_gasto_gasto', 'descripcion_gasto_gasto.gasto_id', '=', 'gastos.id')
         ->join('descripcion_gastos', 'descripcion_gastos.id', '=', 'descripcion_gasto_gasto.descripcion_gasto_id')
         ->where('gastos.id', '=', $id)
+        ->where('gastos.idusuario', '=', Auth::id()) 
         ->groupBy('gastos.id', 'gastos.monto_gasto','tipo_gastos.id','tipo_gastos.descripcion')
         ->firstOrFail();
 
@@ -149,9 +177,6 @@ class GastosController extends Controller
         return redirect('gastos/estadisticas');
     }
     
-    
-    
-
     /**
      * Remove the specified resource from storage.
      */
@@ -196,6 +221,8 @@ class GastosController extends Controller
         $descripciones = DescripcionGasto::join('tipo_gastos', 'tipo_gastos.id', '=', 'descripcion_gastos.tipo_gasto_id')
                         ->select('descripcion_gastos.descripcion')
                         ->where('tipo_gastos.id', $tipo_gasto_id)
+                        ->where('tipo_gastos.idusuario', '=', Auth::id())
+                        ->orderBy('descripcion_gastos.descripcion', 'asc')
                         ->pluck('descripcion_gastos.descripcion')
                         ->toArray();
 

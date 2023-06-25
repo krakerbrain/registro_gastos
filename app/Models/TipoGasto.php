@@ -9,4 +9,10 @@ class TipoGasto extends Model
 {
     use HasFactory;
     protected $fillable = ['descripcion'];
+
+    public static function buscarPorDescripcion($descripcion)
+{
+    return TipoGasto::where('descripcion', $descripcion)
+                   ->first();
+}
 }

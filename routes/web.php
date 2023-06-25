@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GastosController;
 use App\Http\Controllers\RegistroUsuario;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\LogoutController;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,4 +37,5 @@ Route::post('/register', [RegistroUsuario::class, 'register']);
 Route::get('/login', [LoginController::class, 'show']);
 Route::post('/login', [LoginController::class, 'login']);
 
+Route::get('/logout', [LogoutController::class, 'logout']);
 

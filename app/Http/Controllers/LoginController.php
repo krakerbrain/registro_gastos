@@ -12,6 +12,9 @@ class LoginController extends Controller
 
     public function show()
     {
+        if(Auth::check()){
+            return redirect('/gastos');
+        }
         return view ('login.login');
     }
 
