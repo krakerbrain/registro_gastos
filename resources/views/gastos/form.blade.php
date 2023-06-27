@@ -13,6 +13,10 @@
 </fieldset>
 @endif
 
+<label for="monto_gasto">Monto</label>
+<br>
+<input class="w-100"type="number" name="monto_gasto" id="monto_gasto" value="{{ isset($gastos->monto_gasto) ? $gastos->monto_gasto : ''}}">
+<br>
 <label for="tipoGasto" >Tipo Gasto</label>
 <br>
 <input class="w-100"type="text" name="tipoGasto" id="tipoGasto" value="{{ isset($gastos->tipo_gasto) ? $gastos->tipo_gasto : ''}}"  {{ $modo == 'Editar' ? 'disabled' : '' }}>
@@ -22,10 +26,6 @@
 <input class="w-100" type="text" name="descripcion" id="descripcion" value="{{ isset($gastos->descripcion_gasto) ? $gastos->descripcion_gasto : ''}}" placeholder="Ejm: 'comida, utiles escolares'" {{ $modo == 'Editar' ? 'onfocus="obtenerDescripciones('.$gastos->tipo_gasto_id.')"': '' }}>
 <br>
 <div id="desc"></div>
-<label for="monto_gasto">Monto</label>
-<br>
-<input class="w-100"type="number" name="monto_gasto" id="monto_gasto" value="{{ isset($gastos->monto_gasto) ? $gastos->monto_gasto : ''}}">
-<br>
 <input class="btn btn-primary w-100 my-3"type="submit" value="{{$modo}} gasto">
 <script>
     

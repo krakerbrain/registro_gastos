@@ -10,10 +10,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
-
+$mesesEnEspanol = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 class GastosController extends Controller
 {
-
+    const MESES_EN_ESPANOL = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   /**
      * Display a listing of the resource.
      */
@@ -107,19 +107,41 @@ class GastosController extends Controller
       /**
      * Display the specified resource.
      */
-    public function show(Gastos $gastos)
+    public function show(Request $request, Gastos $gastos)
     {
-        //
+        $mesAnno = $request->input('mesAnno');
+        
+        if (empty($mesAnno)) {
+            $mes = date('m');
+            $anno = date('Y');
+        } else {
+            $partes = explode('-', $mesAnno);
+            $mes = $partes[0];
+            $anno = $partes[1];
+        }
+        
         $idusuario = Auth::id();
         $gastos = Gastos::with('tipoGasto')
-               ->where('idusuario', $idusuario)
-               ->get();
+                        ->where('idusuario', $idusuario)
+                        ->whereMonth('updated_at', $mes)
+                        ->whereYear('updated_at', $anno)
+                        ->get();
+        
         $suma = Gastos::where('idusuario', $idusuario)
-               ->sum('monto_gasto');
+                        ->whereMonth('updated_at', $mes)
+                        ->whereYear('updated_at', $anno)
+                        ->sum('monto_gasto');
+        
+        $fecha = self::MESES_EN_ESPANOL[$mes-1].', '.$anno;
+    
+        $opcionesMeses = $this->obtenerMesesConGastos(); 
+        
         return view('gastos.estadisticas', [
-                                            'gastos' => $gastos,
-                                             'suma' => $suma
-                                            ]);
+            'gastos' => $gastos,
+            'suma' => $suma,
+            'fecha' => $fecha,
+            'opcionesMeses' => $opcionesMeses,
+        ]);
     }
 
     /**
@@ -240,5 +262,23 @@ class GastosController extends Controller
 
         return response()->json([$descripciones]);
     }
+
+    public function obtenerMesesConGastos()
+    {
+        $mesesConGastos = Gastos::selectRaw('MONTH(updated_at) as mes, YEAR(updated_at) as anno')
+            ->groupBy('mes', 'anno')
+            ->get();
+    
+        $opcionesMeses = [];
+        foreach ($mesesConGastos as $mesGasto) {
+            $nombreMes = self::MESES_EN_ESPANOL[$mesGasto->mes - 1]; // Obtener el nombre del mes en español
+            $fecha = $mesGasto->mes . '-' . $mesGasto->anno; // Formato 'm-Y'
+            $opcion = $nombreMes . ', ' . $mesGasto->anno;
+            $opcionesMeses[$fecha] = $opcion;
+        }
+    
+        return $opcionesMeses;  
+    }
+    
     
 }

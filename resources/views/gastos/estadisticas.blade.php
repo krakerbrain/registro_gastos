@@ -4,7 +4,16 @@
 @include('partials.header')
 @auth
                 <div class="d-flex justify-content-between">
-                    <h4>Total de gastos </h4>
+
+                    <form action="{{ route('obtenerMesesConGastos') }}" method="GET">
+                        @csrf
+                        <select name="mesAnno" onchange="seleccionarOpcion(this.options[this.selectedIndex].id)">
+                            @foreach (array_reverse($opcionesMeses) as $clave => $opcion)
+                                <option id="{{ $clave }}" value="{{ $opcion }}" @if ($fecha == $opcion) selected @endif>{{ $opcion }}</option>
+                            @endforeach
+                        </select>
+                    </form>
+            
                     <h4>$ {{$suma}}</h4>
                 </div>
                 <table class="table table-striped table-bordered">
@@ -20,18 +29,19 @@
                         @foreach ($gastos as $gasto)
                             <tr id="gasto-{{ $gasto->id }}">
                                 <td class="align-baseline">{{ $gasto->tipoGasto->descripcion }}
-                                    <a href="#" id="despliegaDesc" onclick="despliegaDesc('gasto-{{ $gasto->id }}')" title="Descripcion"><i id="icono-ver-gasto-{{ $gasto->id }}" class="fa-solid fa-eye"></i></a>
+
                                 </td>
                                 <td class="align-baseline text-end" nowrap>{{Currency::currency("CLP")->format($gasto->monto_gasto,true)}}</td>
-                                <td class="align-baseline text-center">{{ date_format($gasto->created_at, "d/m/Y") }}</td>
+                                <td class="align-baseline text-center">{{ date_format($gasto->created_at, "d/m") }}</td>
                                 <td class="d-flex align-items-center justify-content-around">
+                                    <a href="#" id="despliegaDesc" onclick="despliegaDesc('gasto-{{ $gasto->id }}')" title="Descripcion"><i id="icono-ver-gasto-{{ $gasto->id }}" class="fa-solid fa-eye"></i></a>
                                     <a href="{{url('/gastos/'.$gasto->id.'/edit')}}" title="Editar"><i class="fa-solid fa-pen-to-square"></i></a>
                                     <form action="{{ url('/gastos/'. $gasto->id) }}" method="post" id="editaGasto">
                                         @csrf
                                         {{method_field('DELETE')}}
-                                        <button class="btn bg-transparent" onclick="return confirm('Esta seguro de borrar el registro?')" title="Eliminar">
+                                        <a onclick="return confirm('Esta seguro de borrar el registro?')" title="Eliminar">
                                             <i class="fa-regular fa-trash-can text-primary"></i>
-                                        </button>
+                                        </a>
                                     </form>
                                 </td>
                             </tr>
@@ -45,6 +55,16 @@
         </div>
     </div>
     <script>
+function seleccionarOpcion(fecha) {
+    // Obtener el valor del mes y año desde la fecha (formato 'm-Y')
+    var partes = fecha.split(', ');
+    var mesAnno = partes[0];
+  
+    // Redirigir a la página de estadísticas con los parámetros de mes y año seleccionados
+    var url = "{{ url('gastos/estadisticas') }}?mesAnno=" + mesAnno;
+    window.location.href = url;
+}
+
         async function despliegaDesc(id) {
           const descripciones = document.getElementById(`descripciones-${id}`);
           if (descripciones === null) {
