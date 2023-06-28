@@ -109,8 +109,11 @@ class GastosController extends Controller
      */
     public function show(Request $request, Gastos $gastos)
     {
+        // dd($request);
         $mesAnno = $request->input('mesAnno');
-        
+        $orderBy = $request->input('orderBy', 'id');
+        $orderDir = $request->input('orderDir','asc');
+    
         if (empty($mesAnno)) {
             $mes = date('m');
             $anno = date('Y');
@@ -119,14 +122,18 @@ class GastosController extends Controller
             $mes = $partes[0];
             $anno = $partes[1];
         }
-        
+    
         $idusuario = Auth::id();
-        $gastos = Gastos::with('tipoGasto')
+        $query = Gastos::with('tipoGasto')
                         ->where('idusuario', $idusuario)
                         ->whereMonth('updated_at', $mes)
-                        ->whereYear('updated_at', $anno)
-                        ->get();
-        
+                        ->whereYear('updated_at', $anno);
+    
+        if (!empty($orderBy) && !empty($orderDir)) {
+            $query = $query->orderBy($orderBy, $orderDir);
+        }
+    
+        $gastos = $query->get();
         $suma = Gastos::where('idusuario', $idusuario)
                         ->whereMonth('updated_at', $mes)
                         ->whereYear('updated_at', $anno)
@@ -141,6 +148,8 @@ class GastosController extends Controller
             'suma' => $suma,
             'fecha' => $fecha,
             'opcionesMeses' => $opcionesMeses,
+            'orderBy' => $orderBy,
+            'orderDir' => $orderDir
         ]);
     }
 
