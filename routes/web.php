@@ -32,6 +32,7 @@ Route::get('autocomplete', [GastosController::class, 'autocomplete'])->name('aut
 Route::get('get_descripciones/{tipo_gasto_id}', [GastosController::class, 'getDescripciones'])->name('get_descripciones');
 Route::get('get_descripciones_estadisticas/{gasto_id}', [GastosController::class, 'getDescripcionesEstadisticas'])->name('get_descripciones_estadisticas');
 Route::get('obtenerMesesConGastos', [GastosController::class, 'obtenerMesesConGastos'])->name('obtenerMesesConGastos');
+Route::get('/suma-gastos-detalle', [GastosController::class, 'sumaGastosDetalle']);
 
 
 Route::get('/register', [RegistroUsuario::class, 'show']);

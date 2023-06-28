@@ -288,6 +288,28 @@ class GastosController extends Controller
     
         return $opcionesMeses;  
     }
+
+    public function sumaGastosDetalle(Request $request){
+        $idGasto = $request->input('idGasto');
+        $idFecha = $request->input('idFecha');
+        $partes = explode('-', $idFecha);
+        $mes = $partes[0];
+        $anno = $partes[1];
+        
+        $suma = Gastos::join('tipo_gastos', 'tipo_gastos.id', '=', 'gastos.tipo_gasto_id')
+            ->where('tipo_gastos.id', $idGasto)
+            ->whereMonth('gastos.updated_at', $mes)
+            ->whereYear('gastos.updated_at', $anno)
+            ->select('tipo_gastos.descripcion')
+            ->sum('gastos.monto_gasto');
+            
+            $descripcion = TipoGasto::where('id', $idGasto)->value('descripcion');
+
+            return response()->json([
+                'suma' => $suma,
+                'descripcion' => $descripcion,
+            ]);
+    }
     
     
 }

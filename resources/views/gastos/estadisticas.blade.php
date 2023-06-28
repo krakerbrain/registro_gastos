@@ -5,7 +5,7 @@
 @auth
                 <div class="d-flex justify-content-between">
 
-                    <form action="{{ route('obtenerMesesConGastos') }}" method="GET">
+                    <form action="{{ route('obtenerMesesConGastos') }}" method="GET" id="formMeses">
                         @csrf
                         <select name="mesAnno" onchange="seleccionarOpcion(this.options[this.selectedIndex].id)">
                             @foreach (array_reverse($opcionesMeses) as $clave => $opcion)
@@ -62,9 +62,7 @@
                     <tbody>
                         @foreach ($gastos as $gasto)
                             <tr id="gasto-{{ $gasto->id }}">
-                                <td class="align-baseline">{{ $gasto->tipoGasto->descripcion }}
-
-                                </td>
+                                <td class="align-baseline" onclick="obtenerSumaGastos({{ $gasto->tipoGasto->id }})">{{ $gasto->tipoGasto->descripcion }}</td>
                                 <td class="align-baseline text-end" nowrap>{{Currency::currency("CLP")->format($gasto->monto_gasto,true)}}</td>
                                 <td class="align-baseline text-center">{{ date_format($gasto->created_at, "d/m") }}</td>
                                 <td class="d-flex align-items-center justify-content-around">
@@ -142,6 +140,32 @@ function seleccionarOpcion(fecha) {
                 icono.classList.remove("fa-eye-slash");
                 icono.classList.add("fa-eye"); // eliminar la clase "fa-eye"
             }
+        }
+
+        function obtenerSumaGastos(idGasto) {
+            var selectElement = document.getElementById('formMeses').querySelector('select');
+            var selectedOption = selectElement.options[selectElement.selectedIndex];
+            var idFecha = selectedOption.id;
+
+            // Realizar una solicitud AJAX
+            $.ajax({
+                url: '/suma-gastos-detalle',
+                method: 'GET',
+                data: { idGasto: idGasto,
+                        idFecha: idFecha },
+                success: function(response) {
+                    console.log(response)
+                    // Manipular los datos recibidos en la respuesta
+                    var suma = response.suma;
+                    var desc = response.descripcion;
+
+                    // Hacer algo con la suma de gastos (por ejemplo, mostrarla en el front-end)
+                    alert('El gasto de '+ desc +' es de: $' + suma);
+                },
+                error: function(jqXHR) {
+                    console.error(jqXHR);
+                }
+            });
         }
     </script>
     @endauth
