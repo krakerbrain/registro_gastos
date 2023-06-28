@@ -21,17 +21,15 @@ class LoginController extends Controller
     public function login(LoginRequest $request)
     {
         $credentials = $request->getCredentials();
-        
-
-        if(!Auth::validate($credentials)){
-            return redirect()->to('/login')->withErrors('login.failed');
+        $remember = $request->has('remember'); // Verifica si se seleccionó "Recordarme"
+    
+        if (Auth::attempt($credentials, $remember)) {
+            // Autenticación exitosa
+            return $this->authenticated($request, Auth::user());
         }
-
-        $user = Auth::getProvider()->retrieveByCredentials($credentials);
-        Auth::login($user);
-
-        return $this->authenticated($request,$user);
-
+    
+        // Autenticación fallida
+        return redirect()->to('/login')->withErrors('login.failed');
     }
 
     public function authenticated(Request $request, $user)

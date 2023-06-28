@@ -20,9 +20,17 @@
               </a>  
             </div>
           </div>
+          <div class="form-group  mt-3">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="remember" id="remember">
+                <label class="form-check-label" for="remember">
+                    Recordarme
+                </label>
+            </div>
+          </div>       
           <div class="form-group mt-3">
             <input type="submit" value="Login" class="btn btn-primary w-100">
-          </div>        
+          </div> 
     </form>
     <div class="d-flex gap-1 justify-content-center mt-1">
         <div style="margin-right:5px">¿No tiene una cuenta?</div>
