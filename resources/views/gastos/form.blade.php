@@ -20,6 +20,7 @@
 <label for="tipoGasto" >Tipo Gasto</label>
 <br>
 <input class="w-100"type="text" name="tipoGasto" id="tipoGasto" value="{{ isset($gastos->tipo_gasto) ? $gastos->tipo_gasto : ''}}"  {{ $modo == 'Editar' ? 'disabled' : '' }}>
+<input type="hidden" name="" id="tipo_gasto_id" value="">
 <br>
 <label for="descripcion" >Descripción <small style="color:red">Ingresar descripciones separadas por coma</small></label>
 <br>
@@ -30,17 +31,35 @@
 <script>
     
     $(function() {
-        $( "#tipoGasto" ).autocomplete({
-            source: "{{ route('autocomplete') }}",
-            minLength: 2,
-            select: function(event, ui) {
+    $("#tipoGasto").autocomplete({
+        source: function(request, response) {
+            var url = "{{ route('autocomplete') }}?term=" + request.term + "&tabla=TipoGasto";
+            $.getJSON(url, response);
+        },
+        minLength: 2,
+        select: function(event, ui) {
             $('#tipoGasto').val(ui.item.value);
             $('#tipoGasto').data('id', ui.item.id);
             $('#descripcion').focus();
-            
         }
     });
 });
+
+$(function() {
+    $("#descripcion").autocomplete({
+        source: function(request, response) {
+            var tipoGastoId = $("#tipo_gasto_id").val(); // Obtener el valor de tipo_gasto_id
+            var url = "{{ route('autocomplete') }}?term=" + request.term + "&tabla=DescripcionGasto&tipoGastoId=" + tipoGastoId;
+            $.getJSON(url, response);
+        },
+        minLength: 2,
+        select: function(event, ui) {
+            $('#descripcion').val(ui.item.value);
+            $('#descripcion').data('id', ui.item.id);
+        }
+    });
+});
+
 
 // Agregar evento de clic a los botones btn-desc
 $('#desc').on('click', '#btn-desc', function(e) {
@@ -67,6 +86,7 @@ $('.btn-masfrecuente').click(function(e) {
     var descripcion = $(this).data('descripcion');
     // Establecer el valor del campo de descripción
     $('#tipoGasto').val(descripcion);
+    $('#tipo_gasto_id').val($(this).data('id'));
     activarBotones($(this).data('id'))
     $('descripcion').focus();
 });
@@ -83,7 +103,7 @@ function obtenerDescripciones(tipo_gasto_id) {
             }
         },
         error: function(xhr, status, error) {
-            console.log(xhr.responseText);
+            console.log(xhr);
         }
     });
 }

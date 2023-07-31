@@ -126,8 +126,8 @@ class GastosController extends Controller
         $idusuario = Auth::id();
         $query = Gastos::with('tipoGasto')
                         ->where('idusuario', $idusuario)
-                        ->whereMonth('updated_at', $mes)
-                        ->whereYear('updated_at', $anno);
+                        ->whereMonth('created_at', $mes)
+                        ->whereYear('created_at', $anno);
     
         if (!empty($orderBy) && !empty($orderDir)) {
             $query = $query->orderBy($orderBy, $orderDir);
@@ -135,8 +135,8 @@ class GastosController extends Controller
     
         $gastos = $query->get();
         $suma = Gastos::where('idusuario', $idusuario)
-                        ->whereMonth('updated_at', $mes)
-                        ->whereYear('updated_at', $anno)
+                        ->whereMonth('created_at', $mes)
+                        ->whereYear('created_at', $anno)
                         ->sum('monto_gasto');
         
         $fecha = self::MESES_EN_ESPANOL[$mes-1].', '.$anno;
@@ -223,42 +223,57 @@ class GastosController extends Controller
     public function autocomplete(Request $request)
     {
         $query = $request->get('term', '');
-       
+        $tabla = $request->get('tabla', '');
+        $tipoGastoId = $request->get('tipoGastoId', '');
+        
         $validator = Validator::make(['query' => $query], [
-            'query' => 'required|regex:/^[a-zA-Z0-9\s]+$/',
+            'query' => 'required|regex:/^[a-zA-Z0-9\s,]+$/',
         ]);
+        
         
         if ($validator->fails()) {
             return response()->json(['error' => 'Invalid input']);
         }
-    
-        $tipogastos = TipoGasto::where('descripcion', 'LIKE', '%'.$query.'%')->get();
-    
+        
+        if ($tabla === 'DescripcionGasto') {
+            $resultados = DescripcionGasto::where('descripcion', 'LIKE', '%'.$query.'%')
+                ->where('tipo_gasto_id', $tipoGastoId)
+                ->get();
+        } else {
+            $resultados = TipoGasto::where('descripcion', 'LIKE', '%'.$query.'%')->get();
+        }
+        
         $data = [];
-        foreach ($tipogastos as $tipogasto) {
+        foreach ($resultados as $resultado) {
             $data[] = [
-                'value' => $tipogasto->descripcion,
-                'id' => $tipogasto->id,
+                'value' => $resultado->descripcion,
+                'id' => $resultado->id,
             ];
         }
-    
+        
         return response()->json($data);
     }
-
+    
+    
 
     public function getDescripciones($tipo_gasto_id)
     {
-        
-        $descripciones = DescripcionGasto::join('tipo_gastos', 'tipo_gastos.id', '=', 'descripcion_gastos.tipo_gasto_id')
-                        ->select('descripcion_gastos.descripcion')
-                        ->where('tipo_gastos.id', $tipo_gasto_id)
-                        ->where('tipo_gastos.idusuario', '=', Auth::id())
-                        ->orderBy('descripcion_gastos.descripcion', 'asc')
-                        ->pluck('descripcion_gastos.descripcion')
-                        ->toArray();
-
+        $descripciones = DB::table('descripcion_gasto_gasto')
+            ->join('descripcion_gastos', 'descripcion_gastos.id', '=', 'descripcion_gasto_gasto.descripcion_gasto_id')
+            ->join('tipo_gastos', 'tipo_gastos.id', '=', 'descripcion_gastos.tipo_gasto_id')
+            ->select('descripcion_gastos.descripcion', DB::raw('COUNT(*) AS contador'))
+            ->where('tipo_gastos.id', $tipo_gasto_id)
+            ->where('tipo_gastos.idusuario', Auth::id())
+            ->groupBy('descripcion_gastos.descripcion', 'descripcion_gasto_gasto.descripcion_gasto_id')
+            ->orderBy('contador', 'desc')
+            ->limit(10)
+            ->pluck('descripcion_gastos.descripcion')
+            ->toArray();
+    
         return response()->json([$descripciones]);
     }
+    
+    
 
     public function getDescripcionesEstadisticas($gasto_id)
     {

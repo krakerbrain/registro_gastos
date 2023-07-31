@@ -29,6 +29,7 @@ Route::group(['middleware' => 'auth'], function () {
 });
 // Route::resource('gastos', GastosController::class);
 Route::get('autocomplete', [GastosController::class, 'autocomplete'])->name('autocomplete');
+// Route::get('autocompleteDesc', [GastosController::class, 'autocompleteDesc'])->name('autocompleteDesc');
 Route::get('get_descripciones/{tipo_gasto_id}', [GastosController::class, 'getDescripciones'])->name('get_descripciones');
 Route::get('get_descripciones_estadisticas/{gasto_id}', [GastosController::class, 'getDescripcionesEstadisticas'])->name('get_descripciones_estadisticas');
 Route::get('obtenerMesesConGastos', [GastosController::class, 'obtenerMesesConGastos'])->name('obtenerMesesConGastos');

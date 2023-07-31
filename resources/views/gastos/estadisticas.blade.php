@@ -71,9 +71,9 @@
                                     <form action="{{ url('/gastos/'. $gasto->id) }}" method="post" id="editaGasto">
                                         @csrf
                                         {{method_field('DELETE')}}
-                                        <a onclick="return confirm('Esta seguro de borrar el registro?')" title="Eliminar">
+                                        <button class="border-0" type="submit" onclick="return confirm('Esta seguro de borrar el registro?')" title="Eliminar">
                                             <i class="fa-regular fa-trash-can text-primary"></i>
-                                        </a>
+                                        </button>
                                     </form>
                                 </td>
                             </tr>
